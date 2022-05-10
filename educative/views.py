@@ -19,7 +19,7 @@ from .forms import *
 def course_list(request):
     """Main page uchun kurslarri list"""
     courses = Course.objects.all()
-    serializer = CourseListSerializers(courses, many=True)
+    serializer = CourseSerializers(courses, many=True)
     return Response(serializer.data)
 
 
@@ -30,7 +30,7 @@ def register_student(request):
     if form.is_valid():
         user = form.save()
         student = Student.objects.create(user=user)
-        serializer = StudentDetailSerializer(student)
+        serializer = StudentSerializer(student)
         login(request, user)
         return Response(serializer.data)
     else:
@@ -43,9 +43,48 @@ def teacher_dashboard(request):
     """Ustoz dashbordi"""
     teacher = get_object_or_404(Teacher, user=request.user)
     courses = Course.objects.filter(teacher=teacher)
-    serializer = CourseListSerializers(courses, many=True)
+    serializer = CourseSerializers(courses, many=True)
     return Response(serializer.data)
 
+
+@api_view(["GET"])
+@permission_classes((IsAuthenticated,))
+def course_view(request, pk):
+    course = get_object_or_404(Course, id=pk)
+    serializer = CourseSerializers(course)
+    return Response(serializer.data)
+
+
+@api_view(["POST"])    
+@permission_classes((IsAuthenticated,))
+def course_create(request):
+    teacher = get_object_or_404(Teacher, user=request.user)
+    form = CourseCreateForm(request.POST)
+    if form.is_valid():
+        course = form.save()
+        course.teacher = teacher
+        course.save()
+        serializer = CourseSerializers(course)
+    return Response(serializer.data)
+
+
+@api_view(["PATCH", "DELETE"])
+@permission_classes((IsAuthenticated,))
+def course_update(request, pk):
+    course = get_object_or_404(Course, id=pk)
+    if request.method == 'PATCH':
+        form = CourseCreateForm(request.POST)
+        if form.is_valid():
+            course.name = form.cleaned_data['name']
+            course.description = form.cleaned_data['description']
+            course.difficulty = form.cleaned_data['difficulty']
+            course.price = form.cleaned_data['price']
+            course.save()
+            serializer = CourseSerializers(course)
+            return Response(serializer.data)
+    elif request.method == 'DELETE':
+        course.delete()
+        return Response("Kurs o'chirildi")
 
 @api_view(["POST"])
 def teacher_register(request):
@@ -54,7 +93,7 @@ def teacher_register(request):
     if form.is_valid():
         user = form.save()
         teacher = Teacher.objects.create(user=user)
-        serializer = TeacherDetailSerializer(teacher)
+        serializer = TeacherSerializer(teacher)
         return Response(serializer.data)
     else:
         return Response("Registration error")
@@ -65,7 +104,7 @@ def teacher_register(request):
 def admin_unapproved_list(request):
     """Tasdiqlanmagan ustozlar listi"""
     teachers = Teacher.objects.filter(status=False)
-    serializer = TeacherDetailSerializer(teachers, many=True)
+    serializer = TeacherSerializer(teachers, many=True)
     return Response(serializer.data)
 
 
@@ -105,9 +144,20 @@ def admin_dashboard(request):
 
 @api_view(["GET"])
 @permission_classes((IsAuthenticated,))
+def student_enroll(request, pk):
+    course = get_object_or_404(Course, id=pk)
+    student = get_object_or_404(Student, user=request.user)
+    course.student_set.add(student)
+    student.save()
+    serializer = CourseSerializers(student.courses.all(), many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes((IsAuthenticated,))
 def student_dashboard(request):
     """Student dashbordi"""
     student = get_object_or_404(Student, user=request.user)
     courses = student.courses.all()
-    serializer = CourseListSerializers(courses, many=True)
+    serializer = CourseSerializers(courses, many=True)
     return Response(serializer.data)

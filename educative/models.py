@@ -20,7 +20,7 @@ class Course(models.Model):
     description = models.TextField()
     difficulty = models.CharField(max_length=15)
     price = models.PositiveSmallIntegerField()
-    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name

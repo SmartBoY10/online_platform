@@ -1,6 +1,9 @@
+from dataclasses import fields
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django import forms
 from django.contrib.auth.models import User
+
+from .models import Course
 
 
 class RegisterForm(UserCreationForm):
@@ -15,6 +18,8 @@ class RegisterForm(UserCreationForm):
         fields = ("username", "first_name", "last_name", "email", "password1", "password2")
 
 
-class ConfirForm(forms.Form):
-    approved = forms.CharField(max_length=10, required=False)
-    reject = forms.CharField(max_length=10, required=False)
+class CourseCreateForm(forms.ModelForm):
+
+    class Meta:
+        model = Course
+        fields = ("name", "description", "difficulty", "price",)
