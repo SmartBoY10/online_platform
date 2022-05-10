@@ -98,3 +98,12 @@ def admin_dashboard(request):
         list_of_data.append(obj)
             
     return Response(list_of_data)
+
+
+@api_view(["GET"])
+@permission_classes((IsAuthenticated,))
+def student_dashboard(request):
+    student = get_object_or_404(Student, user=request.user)
+    courses = student.courses.all()
+    serializer = CourseListSerializers(courses, many=True)
+    return Response(serializer.data)
