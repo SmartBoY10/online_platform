@@ -1,8 +1,7 @@
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.contrib.auth import login, logout
+from django.contrib.auth import login
 from django.contrib import messages
-from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.status import (
@@ -40,8 +39,8 @@ def register_student(request):
 @api_view(["GET"])
 @permission_classes((IsAuthenticated,))
 def teacher_dashboard(request):
-    teacher=Teacher.objects.get(user=request.user)
-    print(request.user)
+    # teacher=Teacher.objects.get(user=request.user)
+    teacher = get_object_or_404(Teacher, user=request.user)
     courses = Course.objects.filter(teacher=teacher)
     serializer = CourseListSerializers(courses, many=True)
     return Response(serializer.data)
@@ -88,14 +87,14 @@ def admin_dashboard(request):
     teachers = Teacher.objects.filter(status=True)
     list_of_data = []
     for teacher in teachers:
-        courses = Course.objects.filter(teacher=teacher)
+        teachers_courses = Course.objects.filter(teacher=teacher)
         obj = {}
-        c = {}
-        for course in courses:
-            c[course.name] = course.get_students_count()
+        courses = {}
+        for course in teachers_courses:
+            courses[course.id] = {'course': course.name, 'count': course.get_students_count()}
         
         obj['teacher'] = teacher.user.username
-        obj['courses'] = c
+        obj['courses'] = courses
         list_of_data.append(obj)
             
     return Response(list_of_data)
