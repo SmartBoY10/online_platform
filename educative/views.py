@@ -17,6 +17,7 @@ from .forms import *
 
 @api_view(["GET"])
 def course_list(request):
+    """Main page uchun kurslarri list"""
     courses = Course.objects.all()
     serializer = CourseListSerializers(courses, many=True)
     return Response(serializer.data)
@@ -24,22 +25,22 @@ def course_list(request):
 
 @api_view(["POST"])
 def register_student(request):
+    """Talaba ro'yxatdan o'tishi uchun"""
     form = RegisterForm(request.POST)
     if form.is_valid():
         user = form.save()
         student = Student.objects.create(user=user)
         serializer = StudentDetailSerializer(student)
         login(request, user)
-        messages.success(request, 'You are succes signed up')
         return Response(serializer.data)
     else:
-        messages.error(request, 'Registration error')
+        return Response("Registration error")
 
 
 @api_view(["GET"])
 @permission_classes((IsAuthenticated,))
 def teacher_dashboard(request):
-    # teacher=Teacher.objects.get(user=request.user)
+    """Ustoz dashbordi"""
     teacher = get_object_or_404(Teacher, user=request.user)
     courses = Course.objects.filter(teacher=teacher)
     serializer = CourseListSerializers(courses, many=True)
@@ -48,21 +49,21 @@ def teacher_dashboard(request):
 
 @api_view(["POST"])
 def teacher_register(request):
+    """Ustoz ro'yxatdan o'tishi uchun"""
     form = RegisterForm(request.POST)
     if form.is_valid():
         user = form.save()
         teacher = Teacher.objects.create(user=user)
         serializer = TeacherDetailSerializer(teacher)
-        messages.success(request, 'You are succes signed up')
         return Response(serializer.data)
     else:
-        messages.error(request, 'Registration error')
-        return Response("Forma xato")
+        return Response("Registration error")
 
 
 @api_view(["GET"])
 @permission_classes((IsAuthenticated, IsAdminUser,))
 def admin_unapproved_list(request):
+    """Tasdiqlanmagan ustozlar listi"""
     teachers = Teacher.objects.filter(status=False)
     serializer = TeacherDetailSerializer(teachers, many=True)
     return Response(serializer.data)
@@ -71,6 +72,7 @@ def admin_unapproved_list(request):
 @api_view(["POST"])
 @permission_classes((IsAuthenticated, IsAdminUser,))
 def admin_confirm(request, pk):
+    """Ustozlarni tasdiqlash"""
     teacher = Teacher.objects.get(id=pk)
     if request.GET.get("confirm"):
         teacher.status = True
@@ -84,6 +86,7 @@ def admin_confirm(request, pk):
 @api_view(["GET"])
 @permission_classes((IsAuthenticated, IsAdminUser,))
 def admin_dashboard(request):
+    """Admin dashbordi"""
     teachers = Teacher.objects.filter(status=True)
     list_of_data = []
     for teacher in teachers:
@@ -103,6 +106,7 @@ def admin_dashboard(request):
 @api_view(["GET"])
 @permission_classes((IsAuthenticated,))
 def student_dashboard(request):
+    """Student dashbordi"""
     student = get_object_or_404(Student, user=request.user)
     courses = student.courses.all()
     serializer = CourseListSerializers(courses, many=True)
